@@ -68,6 +68,8 @@ def validate_input(data, required_features):
 @app.route('/predict', methods = ['POST'])
 def predict():
     '''Real time prediction endpoint for a specific usecase'''
+    # what this function does?
+    # answer : it takes input data from user, validates it, makes prediction using trained model, and saves the prediction into a file.
     try:
         data =request.get_json()
         validate_input(data, REQUIRED_FEATURES)
@@ -91,6 +93,9 @@ def predict():
 @app.route('/batch-predict', methods=['POST'])
 def batch_predict():
     '''Batch prediction endpoint'''
+    # what is batch prediction?
+    # answer : making predictions on multiple data points at once, usually provided in a file. it means user uploads a file containing multiple records, and the model processes all of them in one go. means instead of sending individual requests for each data point, user can send a single request with a file containing many data points, and the model will return predictions for all of them together.
+    # in simple terms, user uploads a file with multiple records and gets predictions for all of them in one go.
     try:
         # check if file is provided
         if 'file' not in request.files:
