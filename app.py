@@ -1,5 +1,6 @@
 import os
 import pandas as pd 
+import numpy as np
 from flask import Flask, request, jsonify
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -63,4 +64,54 @@ def validate_input(data, required_features):
     missing_features = [feature for feature in required_features if feature not in data]
     if missing_features:
         raise ValueError(f"Missing feature:{','.join(missing_features)}")
+    
+@app.route('/predict', methods = ['POST'])
+def predict():
+    '''Real time prediction endpoint for a specific usecase'''
+    try:
+        data =request.get_json()
+        validate_input(data, REQUIRED_FEATURES)
+        
+        # convert input into array
+        input_data = np.array(data[feature] for feature in REQUIRED_FEATURES).reshape(1,-1)
+        
+        # make prediction
+        prediction = model.predict(input_data)
+        
+        # save this prediction into a file
+        record = {**data, 'Prediction': int(prediction[0])}
+        os.makedirs('data',exist_ok=True)
+        file_exists = os.path.isfile(REAL_TIME_PREDICTIONS_PATH)
+        df = pd.DataFrame([record])
+        df.to_csv(REAL_TIME_PREDICTIONS_PATH, mode='a', index=False, header=not file_exists)
+        return jsonify({'prediction': int(prediction[0])})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
+@app.route('/batch-predict', methods=['POST'])
+def batch_predict():
+    '''Batch prediction endpoint'''
+    try:
+        # check if file is provided
+        if 'file' not in request.files:
+            return jsonify({'error':'no files uploaded by user'}), 400
+        file = request.files['file']
+        batch_data = pd.read_csv(file)
+        # validating input data
+        missing_features = [feature for feature in REQUIRED_FEATURES if feature not in batch_data.columns]
+        if missing_features:
+            return jsonify({'error':f"Missing features in batch file: {','.join(missing_features)}"}), 400
+        # make predictions
+        X =  batch_data[REQUIRED_FEATURES]
+        predictions = model.predict(X)
+        # save the predictions into a new file
+        batch_data['Prediction'] = predictions
+        os.makedirs("data", exist_ok=True)
+        batch_data.to_csv(BATCH_PREDICTIONS_PATH, index=False)
+        return jsonify({'message': 'Batch predictions are saved', 'output_file': BATCH_PREDICTIONS_PATH})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    
+if __name__ =='__main__':
+    app.run(debug=True)
         
