@@ -75,7 +75,7 @@ def predict():
         validate_input(data, REQUIRED_FEATURES)
         
         # convert input into array
-        input_data = np.array(data[feature] for feature in REQUIRED_FEATURES).reshape(1,-1)
+        input_data = np.array([data[feature] for feature in REQUIRED_FEATURES]).reshape(1,-1)
         
         # make prediction
         prediction = model.predict(input_data)
